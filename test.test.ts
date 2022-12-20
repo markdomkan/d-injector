@@ -1,54 +1,139 @@
+import {
+  assertEquals,
+  assertInstanceOf,
+  assertStrictEquals,
+} from "https://deno.land/std@0.170.0/testing/asserts.ts";
+import { faker } from "https://deno.land/x/deno_faker@v1.0.3/mod.ts";
+
 import { D_Injector } from "./mod.ts";
 
-export class ServiceClass {
-  public test(text: string) {
-    return text;
-  }
-}
-export class TestClass {
-  constructor(private service: ServiceClass, private text: string) {}
-
-  public test() {
-    return this.service.test(this.text);
-  }
-}
-
 Deno.test("Get by ID", () => {
+  class TestClass {}
+
   const injector = new D_Injector();
   injector.register({
     id: "service.class",
-    serviceClass: ServiceClass,
+    serviceClass: TestClass,
   });
 
   const container = injector.compile();
-  const value = container
-    .get<ServiceClass>("service.class")
-    .test("Hello World");
+  const service = container.get<TestClass>("service.class");
 
-  if (value !== "Hello World") {
-    throw new Error("Value is not equal to Hello World");
-  }
+  assertInstanceOf(service, TestClass);
 });
 
 Deno.test("Find by tag", () => {
+  class TestClass {
+    public test(text: string) {
+      return text;
+    }
+  }
+
   const injector = new D_Injector();
   injector.register({
     id: "service.class",
-    serviceClass: ServiceClass,
+    serviceClass: TestClass,
     tags: ["test"],
   });
 
   const container = injector.compile();
-  const value = container
-    .findByTag<ServiceClass>("test")[0]
-    .test("Hello World");
+  const services = container.findByTag<TestClass>("test");
 
-  if (value !== "Hello World") {
-    throw new Error("Value is not equal to Hello World");
-  }
+  assertEquals(services.length, 1);
+  assertInstanceOf(services[0], TestClass);
 });
 
-Deno.test("Injection with all possible elements", () => {
+Deno.test("The instance text and number should coincide with injected", () => {
+  class TestClass {
+    constructor(public text: string, public number: number) {}
+  }
+
+  const randomText = faker.lorem.word();
+  const randomNumber = faker.random.number();
+
+  const injector = new D_Injector();
+  injector.register({
+    id: "service.class",
+    serviceClass: TestClass,
+    args: [
+      {
+        type: "value",
+        value: randomText,
+      },
+      {
+        type: "value",
+        value: randomNumber,
+      },
+    ],
+  });
+
+  const container = injector.compile();
+  const service = container.get<TestClass>("service.class");
+
+  assertStrictEquals(service.text, randomText);
+  assertStrictEquals(service.number, randomNumber);
+});
+
+Deno.test(
+  "The method execute from TestClass should return the injected text manipulated by the injected service",
+  () => {
+    class ServiceClass {
+      public addExclamation(text: string) {
+        return `${text}!`;
+      }
+    }
+    class TestClass {
+      constructor(private service: ServiceClass, private text: string) {}
+
+      public execute() {
+        return this.service.addExclamation(this.text);
+      }
+    }
+
+    const injector = new D_Injector();
+    injector
+      .register({
+        id: "test.class",
+        serviceClass: TestClass,
+        args: [
+          {
+            type: "service",
+            id: "service.class",
+          },
+          {
+            type: "value",
+            value: "Hello World",
+          },
+        ],
+      })
+      .register({
+        id: "service.class",
+        serviceClass: ServiceClass,
+        tags: ["test"],
+      });
+
+    const container = injector.compile();
+    const value = container.get<TestClass>("test.class").execute();
+
+    assertStrictEquals(value, "Hello World!");
+  }
+);
+
+Deno.test("Method create from the Factory class should be called", () => {
+  class StringFactory {
+    public create() {
+      return "Hello World!";
+    }
+  }
+
+  class TestClass {
+    constructor(private text: string) {}
+
+    public execute() {
+      return this.text;
+    }
+  }
+
   const injector = new D_Injector();
   injector
     .register({
@@ -57,24 +142,18 @@ Deno.test("Injection with all possible elements", () => {
       args: [
         {
           type: "service",
-          id: "service.class",
-        },
-        {
-          type: "value",
-          value: "Hello World",
+          id: "factory",
         },
       ],
     })
     .register({
-      id: "service.class",
-      serviceClass: ServiceClass,
-      tags: ["test"],
+      id: "factory",
+      serviceClass: StringFactory,
+      method: "create",
     });
 
   const container = injector.compile();
-  const value = container.get<TestClass>("test.class").test();
+  const value = container.get<TestClass>("test.class").execute();
 
-  if (value !== "Hello World") {
-    throw new Error("Value is not equal to Hello World");
-  }
+  assertStrictEquals(value, "Hello World!");
 });

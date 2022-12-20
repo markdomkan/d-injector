@@ -16,9 +16,15 @@ type OtherArg = {
 type Service = {
   id: string;
   serviceClass: ServiceClass;
+  method?: string;
   args?: Arguments[];
   tags?: string[];
 };
+
+type RegisteredService = Required<Omit<Service, "id" | "method">> &
+  Pick<Service, "method">;
+
+type RegisteredServiceWithId = RegisteredService & Pick<Service, "id">;
 
 type ServiceInstance = { instance: unknown; tags: string[] };
 
@@ -43,9 +49,12 @@ export class D_Container {
 export class D_Injector {
   private instancedServices: Record<string, ServiceInstance> = {};
   private buildersSubscriber: Record<string, (() => void)[]> = {};
-  private services: Record<string, Required<Omit<Service, "id">>> = {};
+  private services: Record<
+    string,
+    Required<Omit<Service, "id" | "method">> & Pick<Service, "method">
+  > = {};
 
-  public register({ id, serviceClass, args, tags }: Service): this {
+  public register({ id, serviceClass, args, tags, method }: Service): this {
     if (this.services[id]) {
       throw new Error(`Service ${id} already registered`);
     }
@@ -54,6 +63,7 @@ export class D_Injector {
       serviceClass,
       args: args ?? [],
       tags: tags ?? [],
+      method,
     };
 
     return this;
@@ -68,8 +78,6 @@ export class D_Injector {
         this.buildService({ id: key, ...service });
         continue;
       }
-
-      let instancedArgs: unknown[] = [];
 
       for (const arg of service.args) {
         if (arg.type === "service") {
@@ -90,34 +98,42 @@ export class D_Injector {
             ];
             continue servicesFor;
           }
-          instancedArgs = [
-            ...instancedArgs,
-            this.instancedServices[arg.id].instance,
-          ];
-        } else {
-          instancedArgs = [...instancedArgs, arg.value];
         }
       }
-      this.instancedServices[key] = {
-        tags: service.tags,
-        instance: new service.serviceClass(...instancedArgs),
-      };
+
+      this.buildService({ id: key, ...service });
     }
 
     return new D_Container(this.instancedServices);
   }
 
-  private buildService(service: Required<Service>): void {
-    this.instancedServices[service.id] = {
-      tags: service.tags,
-      instance: new service.serviceClass(
+  private buildService(service: RegisteredServiceWithId): void {
+    if (service.method) {
+      const instance = new service.serviceClass(
         ...service.args.map((arg) =>
           arg.type === "value"
             ? arg.value
             : this.instancedServices[arg.id].instance
         )
-      ),
-    };
+      );
+
+      this.instancedServices[service.id] = {
+        tags: service.tags,
+        instance: instance[service.method](),
+      };
+    } else {
+      this.instancedServices[service.id] = {
+        tags: service.tags,
+        instance: new service.serviceClass(
+          ...service.args.map((arg) =>
+            arg.type === "value"
+              ? arg.value
+              : this.instancedServices[arg.id].instance
+          )
+        ),
+      };
+    }
+
     this.buildersSubscriber[service.id]?.forEach((subscriber) => subscriber());
   }
 }

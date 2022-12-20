@@ -26,6 +26,16 @@ or
 
 ```
 
+## Configuration
+
+You can inject other classes that must be instanced as in the previous examples. Numbers, strings, booleans, arrays, objects... can be injected as well.
+
+The system also supports the injection of results of callings to methods of services; factories.
+
+See the examples below.
+
+_If you need more information, you can see the test files._
+
 ## Usage
 
 ### Simple example
@@ -100,18 +110,26 @@ const allInjectedServicesWithAwesomeTag =
   container.findByTag<ServiceClass>("awesome-tag");
 ```
 
-### Using a factory
+### Factory
 
-You can use a factory to create your services.
+You can use a factory classes to create your services. You only need to add the method name to the register method. The D-injector will instance the factory class with all arguments and then call the method. The result of the method is what the D-injector will inject.
 
 ```ts
 const injector = new D_Injector();
-injector.register({
-  id: "service.class",
-  factory: () => {
-    return new ServiceClass();
-  },
-});
-
-const container = injector.compile();
+injector
+  .register({
+    id: "test.class",
+    serviceClass: TestClass,
+    args: [
+      {
+        type: "service",
+        id: "factory",
+      },
+    ],
+  })
+  .register({
+    id: "factory",
+    serviceClass: StringFactory,
+    method: "create",
+  });
 ```
