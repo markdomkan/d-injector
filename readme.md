@@ -7,7 +7,7 @@ D-injector is a really simple and tinny dependency injection library for Deno or
 ## Deno
 
 ```ts
-import { Injector } from "https://deno.land/x/d_injector@1.0/mod.ts";
+import { Injector } from "https://deno.land/x/d_injector/mod.ts";
 
 //...
 ```
@@ -15,14 +15,14 @@ import { Injector } from "https://deno.land/x/d_injector@1.0/mod.ts";
 ## Node.js
 
 ```shell
-    npm install @markdomkan/wall_e
+    npm install @markdomkan/d-injector
 
 ```
 
 or
 
 ```shell
-    yarn add @markdomkan/wall_e
+    yarn add @markdomkan/d-injector
 
 ```
 
@@ -49,7 +49,7 @@ Inject a service into a class and get it from the container using his id.
 //
 // if you are in Node.js, you will have something like this:
 //
-// import { Injector } from "@markdomkan/wall_e";
+// import { Injector } from "@markdomkan/d-injector";
 
 import { TestClass } from "./test-class.ts";
 import { ServiceClass } from "./service-class.ts";
