@@ -30,3 +30,11 @@ await build({
 
 // post build steps
 Deno.copyFileSync("README.md", "npm/README.md");
+
+console.log("Publishing package to npm");
+const publishProcess = Deno.run({
+  cmd: ["npm", "publish", "--access", "public"],
+  cwd: "./npm",
+});
+
+await publishProcess.status();
