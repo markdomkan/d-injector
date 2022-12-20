@@ -1,0 +1,38 @@
+{
+  "module": "./esm/mod.js",
+  "main": "./script/mod.js",
+  "types": "./types/mod.d.ts",
+  "name": "@markdomkan/d-injector",
+  "version": "0.1.0",
+  "description": "D-injector is a really simple and tinny dependency injection library for Deno or Node.js.",
+  "author": "Mark Domkan",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/markdomkan/d-injector.git"
+  },
+  "bugs": {
+    "url": "https://github.com/markdomkan/d-injector/issues"
+  },
+  "homepage": "https://github.com/markdomkan/d-injector#readme",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./types/mod.d.ts",
+        "default": "./esm/mod.js"
+      },
+      "require": {
+        "types": "./types/mod.d.ts",
+        "default": "./script/mod.js"
+      }
+    }
+  },
+  "scripts": {
+    "test": "node test_runner.js"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.9",
+    "chalk": "^4.1.2",
+    "@deno/shim-deno": "~0.11.0"
+  }
+}
