@@ -37,10 +37,13 @@ Deno.test("Find by tag", () => {
   });
 
   const container = injector.compile();
-  const services = container.findByTag<TestClass>("test");
+  const services = container.findByTag("test");
+  const serviceKey = services.keys().next().value;
+  const serviceInstance = services.get(serviceKey);
 
-  assertEquals(services.length, 1);
-  assertInstanceOf(services[0], TestClass);
+  assertEquals(services.size, 1);
+  assertEquals(serviceKey, "service.class");
+  assertInstanceOf(serviceInstance, TestClass);
 });
 
 Deno.test("The instance text and number should coincide with injected", () => {

@@ -103,10 +103,10 @@ injector
   });
 
 const container = injector.compile();
-const allInjectedServicesWithSuperTag =
+const allInjectedServicesWithSuperTagMap =
   container.findByTag<ServiceClass>("super-tag");
 
-const allInjectedServicesWithAwesomeTag =
+const allInjectedServicesWithAwesomeTagMap =
   container.findByTag<ServiceClass>("awesome-tag");
 ```
 

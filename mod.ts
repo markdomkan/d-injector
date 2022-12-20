@@ -39,10 +39,12 @@ export class D_Container {
     return service.instance as T;
   }
 
-  public findByTag<T>(tag: string): T[] {
-    return Object.values(this.services)
-      .filter(({ tags }) => tags.includes(tag))
-      .map(({ instance }) => instance) as T[];
+  public findByTag(tag: string): Map<string, unknown> {
+    return new Map(
+      Object.entries(this.services)
+        .filter(([_, { tags }]) => tags.includes(tag))
+        .map(([key, { instance }]) => [key, instance])
+    );
   }
 }
 
