@@ -71,13 +71,13 @@ export class D_Injector {
     return this;
   }
 
-  public compile(): D_Container {
+  public async compile(): Promise<D_Container> {
     servicesFor: for (const [key, service] of Object.entries(this.services)) {
       if (
         service.args.length === 0 ||
         service.args.every(({ type }) => type === "value")
       ) {
-        this.buildService({ id: key, ...service });
+        await this.buildService({ id: key, ...service });
         continue;
       }
 
@@ -86,7 +86,7 @@ export class D_Injector {
           if (this.instancedServices[arg.id] === undefined) {
             this.buildersSubscriber[arg.id] = [
               ...(this.buildersSubscriber[arg.id] ?? []),
-              () => {
+              async () => {
                 if (
                   service.args.find(
                     (arg) =>
@@ -94,7 +94,7 @@ export class D_Injector {
                       this.instancedServices[arg.id] === undefined
                   ) === undefined
                 ) {
-                  this.buildService({ id: key, ...service });
+                  await this.buildService({ id: key, ...service });
                 }
               },
             ];
@@ -103,13 +103,13 @@ export class D_Injector {
         }
       }
 
-      this.buildService({ id: key, ...service });
+      await this.buildService({ id: key, ...service });
     }
 
     return new D_Container(this.instancedServices);
   }
 
-  private buildService(service: RegisteredServiceWithId): void {
+  private async buildService(service: RegisteredServiceWithId): Promise<void> {
     if (service.method) {
       const instance = new service.serviceClass(
         ...service.args.map((arg) =>
@@ -121,7 +121,7 @@ export class D_Injector {
 
       this.instancedServices[service.id] = {
         tags: service.tags,
-        instance: instance[service.method](),
+        instance: await instance[service.method](),
       };
     } else {
       this.instancedServices[service.id] = {
@@ -136,6 +136,10 @@ export class D_Injector {
       };
     }
 
-    this.buildersSubscriber[service.id]?.forEach((subscriber) => subscriber());
+    const promises = this.buildersSubscriber[service.id]?.map((subscriber) =>
+      subscriber()
+    );
+
+    await Promise.all(promises || []);
   }
 }

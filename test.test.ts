@@ -1,13 +1,13 @@
 import {
   assertEquals,
   assertInstanceOf,
-  assertStrictEquals,
+  assertStrictEquals
 } from "https://deno.land/std@0.170.0/testing/asserts.ts";
 import { faker } from "https://deno.land/x/deno_faker@v1.0.3/mod.ts";
 
 import { D_Injector } from "./mod.ts";
 
-Deno.test("Get by ID", () => {
+Deno.test("Get by ID", async () => {
   class TestClass {}
 
   const injector = new D_Injector();
@@ -16,13 +16,13 @@ Deno.test("Get by ID", () => {
     serviceClass: TestClass,
   });
 
-  const container = injector.compile();
+  const container = await injector.compile();
   const service = container.get<TestClass>("service.class");
 
   assertInstanceOf(service, TestClass);
 });
 
-Deno.test("Find by tag", () => {
+Deno.test("Find by tag", async () => {
   class TestClass {
     public test(text: string) {
       return text;
@@ -36,7 +36,7 @@ Deno.test("Find by tag", () => {
     tags: ["test"],
   });
 
-  const container = injector.compile();
+  const container = await injector.compile();
   const services = container.findByTag("test");
   const serviceKey = services.keys().next().value;
   const serviceInstance = services.get(serviceKey);
@@ -46,40 +46,43 @@ Deno.test("Find by tag", () => {
   assertInstanceOf(serviceInstance, TestClass);
 });
 
-Deno.test("The instance text and number should coincide with injected", () => {
-  class TestClass {
-    constructor(public text: string, public number: number) {}
+Deno.test(
+  "The instance text and number should coincide with injected",
+  async () => {
+    class TestClass {
+      constructor(public text: string, public number: number) {}
+    }
+
+    const randomText = faker.lorem.word();
+    const randomNumber = faker.random.number();
+
+    const injector = new D_Injector();
+    injector.register({
+      id: "service.class",
+      serviceClass: TestClass,
+      args: [
+        {
+          type: "value",
+          value: randomText,
+        },
+        {
+          type: "value",
+          value: randomNumber,
+        },
+      ],
+    });
+
+    const container = await injector.compile();
+    const service = container.get<TestClass>("service.class");
+
+    assertStrictEquals(service.text, randomText);
+    assertStrictEquals(service.number, randomNumber);
   }
-
-  const randomText = faker.lorem.word();
-  const randomNumber = faker.random.number();
-
-  const injector = new D_Injector();
-  injector.register({
-    id: "service.class",
-    serviceClass: TestClass,
-    args: [
-      {
-        type: "value",
-        value: randomText,
-      },
-      {
-        type: "value",
-        value: randomNumber,
-      },
-    ],
-  });
-
-  const container = injector.compile();
-  const service = container.get<TestClass>("service.class");
-
-  assertStrictEquals(service.text, randomText);
-  assertStrictEquals(service.number, randomNumber);
-});
+);
 
 Deno.test(
   "The method execute from TestClass should return the injected text manipulated by the injected service",
-  () => {
+  async () => {
     class ServiceClass {
       public addExclamation(text: string) {
         return `${text}!`;
@@ -115,14 +118,14 @@ Deno.test(
         tags: ["test"],
       });
 
-    const container = injector.compile();
+    const container = await injector.compile();
     const value = container.get<TestClass>("test.class").execute();
 
     assertStrictEquals(value, "Hello World!");
   }
 );
 
-Deno.test("Method create from the Factory class should be called", () => {
+Deno.test("Method create from the Factory class should be called", async () => {
   class StringFactory {
     public create() {
       return "Hello World!";
@@ -155,7 +158,46 @@ Deno.test("Method create from the Factory class should be called", () => {
       method: "create",
     });
 
-  const container = injector.compile();
+  const container = await injector.compile();
+  const value = container.get<TestClass>("test.class").execute();
+
+  assertStrictEquals(value, "Hello World!");
+});
+
+Deno.test("Async method from factory", async () => {
+  class StringFactory {
+    public create(): Promise<string> {
+      return Promise.resolve("Hello World!");
+    }
+  }
+
+  class TestClass {
+    constructor(private text: string) {}
+
+    public execute() {
+      return this.text;
+    }
+  }
+
+  const injector = new D_Injector();
+  injector
+    .register({
+      id: "test.class",
+      serviceClass: TestClass,
+      args: [
+        {
+          type: "service",
+          id: "factory",
+        },
+      ],
+    })
+    .register({
+      id: "factory",
+      serviceClass: StringFactory,
+      method: "create",
+    });
+
+  const container = await injector.compile();
   const value = container.get<TestClass>("test.class").execute();
 
   assertStrictEquals(value, "Hello World!");
