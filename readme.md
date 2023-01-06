@@ -28,13 +28,52 @@ or
 
 ## Configuration
 
-You can inject other classes that must be instanced as in the previous examples. Numbers, strings, booleans, arrays, objects... can be injected as well.
+The D-injector is configured using the `register` method. This method receives an object with the following properties:
 
-The system also supports the injection of results of callings to methods of services; factories.
+- `id`: The id of the service. This id is used to get the service from the container.
+- `serviceClass`: The class of the service. This class will be instantiated by the container.
+- `args`: The arguments that the service needs to be instantiated. The arguments can be services, factories, or values.
+- `tags`: The tags of the service. The tags can be used to find the services by tag. The tags can be a string array or `Record<string, string[]>`. The "Record" mode is useful if you want to add some categories to your tags.
 
-See the examples below.
+### Arguments
 
-_If you need more information, you can see the test files._
+The arguments can be services, factories, or values.
+
+#### Service
+
+The service argument is used to inject a service into another service. The service argument is an object with the following properties:
+
+- `type`: The type of the argument. In this case, the type is `service`.
+- `ref`: The id of the service that you want to inject.
+
+#### Factory
+
+The factory argument is used to inject the result of a factory method. The factory argument is an object with the following properties:
+
+- `type`: The type of the argument. In this case, the type is `service`.
+- `ref`: The id of the service that you want to inject.
+- `method`: The name of the method that you want to call.
+
+#### Value
+
+The value argument is used to inject a value into a service. The value argument is an object with the following properties:
+
+- `type`: The type of the argument. In this case, the type is `value`.
+- `value`: The value that you want to inject. This value can be a number, a string, a boolean, an array, an object, or a function.
+
+## Container
+
+The container is the object that you will use to get the services from the container. The container has the following methods:
+
+- `get`: This method receives the id of the service that you want to get.
+- `findByTag`: This method receives the tag that you want to find. The method returns a map with the services that have the tag. The map has the id of the service as key and the service instance as value. if you use the "Record" mode, you can add the category of the tag as second parameter.
+
+All methods return the InstancedService Object. This object has the following properties:
+
+- `instance`: The instance of the service.
+- `tags`: The tags of the service.
+
+_If you need more information or code examples, you can see the test files._
 
 ## Usage
 
@@ -66,7 +105,7 @@ injector
     args: [
       {
         type: "service",
-        id: "service.class",
+        ref: "service.class",
       },
     ],
   })
@@ -86,7 +125,7 @@ myTestClassInstance.tags.tagCategory; // ["tag1"]
 
 ### Adding some tags
 
-You can add some tags to your services, and then you can find them by tag. The tags can be a string array or `Record<string, string[]>`. The "Record" mode is useful if you want to add some categories to your tags.
+You can add some tags to your services, and then you can find them by tag.
 
 ```ts
 const injector = new D_Injector();
@@ -146,7 +185,7 @@ injector
     args: [
       {
         type: "service",
-        id: "factory",
+        ref: "factory",
       },
     ],
   })

@@ -5,7 +5,7 @@ import {
 } from "https://deno.land/std@0.170.0/testing/asserts.ts";
 import { faker } from "https://deno.land/x/deno_faker@v1.0.3/mod.ts";
 
-import { D_Injector } from "./mod.ts";
+import { D_Injector, InstancedService } from "./mod.ts";
 
 Deno.test("Get by ID", async () => {
   class TestClass {}
@@ -43,7 +43,7 @@ Deno.test("Find by tag", async () => {
 
   assertEquals(services.size, 1);
   assertEquals(serviceKey, "service.class");
-  assertInstanceOf(serviceInstance, TestClass);
+  assertInstanceOf(serviceInstance?.instance, TestClass);
 });
 
 Deno.test(
@@ -218,10 +218,10 @@ Deno.test("should find the service with entry-style tag", async () => {
   const container = await injector.compile();
   const services = container.findByTag("tag1");
 
-  const service = services.values().next().value;
+  const service = services.values().next().value as InstancedService<TestClass>;
 
   assertEquals(services.size, 1);
-  assertInstanceOf(service, TestClass);
+  assertInstanceOf(service.instance, TestClass);
 });
 
 Deno.test(
@@ -241,10 +241,11 @@ Deno.test(
     const container = await injector.compile();
     const services = container.findByTag("tag1", "tagCategory");
 
-    const service = services.values().next().value;
+    const service = services.values().next()
+      .value as InstancedService<TestClass>;
 
     assertEquals(services.size, 1);
-    assertInstanceOf(service, TestClass);
+    assertInstanceOf(service.instance, TestClass);
   }
 );
 

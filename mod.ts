@@ -1,20 +1,20 @@
 // deno-lint-ignore no-explicit-any
-type ServiceClass = new (...args: any[]) => any;
+export type ServiceClass = new (...args: any[]) => any;
 
-type Arguments = ServiceArg | OtherArg;
-type Tags = Array<string> | Record<string, Array<string>>;
+export type Arguments = ServiceArg | OtherArg;
+export type Tags = Array<string> | Record<string, Array<string>>;
 
-type ServiceArg = {
+export type ServiceArg = {
   type: "service";
   ref: string;
 };
 
-type OtherArg = {
+export type OtherArg = {
   type: "value";
   value: unknown;
 };
 
-type Service = {
+export type Service = {
   id: string;
   serviceClass: ServiceClass;
   method?: string;
@@ -27,40 +27,38 @@ type RegisteredService = Required<Omit<Service, "id" | "method">> &
 
 type RegisteredServiceWithId = RegisteredService & Pick<Service, "id">;
 
-type ServiceInstance<T = unknown> = { instance: T; tags: Tags };
+export type InstancedService<T = unknown> = { instance: T; tags: Tags };
 
 export class D_Container {
-  constructor(private services: Record<string, ServiceInstance>) {}
+  constructor(private services: Record<string, InstancedService>) {}
 
   public get<T>(id: string): { instance: T; tags: Tags } {
     const service = this.services[id];
     if (!service) {
       throw new Error(`Service ${id} not registered`);
     }
-    return service as ServiceInstance<T>;
+    return service as InstancedService<T>;
   }
 
-  public findByTag(tag: string, tagKey?: string): Map<string, unknown> {
+  public findByTag(tag: string, tagKey?: string): Map<string, InstancedService> {
     return new Map(
-      Object.entries(this.services)
-        .filter(([_, { tags }]) => {
-          if (tags instanceof Array) {
-            return tags.includes(tag);
-          }
+      Object.entries(this.services).filter(([_, { tags }]) => {
+        if (tags instanceof Array) {
+          return tags.includes(tag);
+        }
 
-          if (tagKey === undefined) {
-            return Object.values(tags).flat().includes(tag);
-          }
+        if (tagKey === undefined) {
+          return Object.values(tags).flat().includes(tag);
+        }
 
-          return tags[tagKey]?.includes(tag);
-        })
-        .map(([key, { instance }]) => [key, instance])
+        return tags[tagKey]?.includes(tag);
+      })
     );
   }
 }
 
 export class D_Injector {
-  private instancedServices: Record<string, ServiceInstance> = {};
+  private instancedServices: Record<string, InstancedService> = {};
   private buildersSubscriber: Record<string, (() => void)[]> = {};
   private services: Record<
     string,
