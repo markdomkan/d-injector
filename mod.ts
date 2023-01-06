@@ -6,7 +6,7 @@ export type Tags = Array<string> | Record<string, Array<string>>;
 
 export type ServiceArg = {
   type: "service";
-  ref: string;
+  id: string;
 };
 
 export type OtherArg = {
@@ -92,15 +92,15 @@ export class D_Injector {
 
       for (const arg of service.args) {
         if (arg.type === "service") {
-          if (this.instancedServices[arg.ref] === undefined) {
-            this.buildersSubscriber[arg.ref] = [
-              ...(this.buildersSubscriber[arg.ref] ?? []),
+          if (this.instancedServices[arg.id] === undefined) {
+            this.buildersSubscriber[arg.id] = [
+              ...(this.buildersSubscriber[arg.id] ?? []),
               async () => {
                 if (
                   service.args.find(
                     (arg) =>
                       arg.type === "service" &&
-                      this.instancedServices[arg.ref] === undefined
+                      this.instancedServices[arg.id] === undefined
                   ) === undefined
                 ) {
                   await this.buildService({ id: key, ...service });
@@ -124,7 +124,7 @@ export class D_Injector {
         ...service.args.map((arg) =>
           arg.type === "value"
             ? arg.value
-            : this.instancedServices[arg.ref].instance
+            : this.instancedServices[arg.id].instance
         )
       );
 
@@ -139,7 +139,7 @@ export class D_Injector {
           ...service.args.map((arg) =>
             arg.type === "value"
               ? arg.value
-              : this.instancedServices[arg.ref].instance
+              : this.instancedServices[arg.id].instance
           )
         ),
       };

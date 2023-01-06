@@ -104,7 +104,7 @@ Deno.test(
         args: [
           {
             type: "service",
-            ref: "service.class",
+            id: "service.class",
           },
           {
             type: "value",
@@ -148,7 +148,7 @@ Deno.test("Method create from the Factory class should be called", async () => {
       args: [
         {
           type: "service",
-          ref: "factory",
+          id: "factory",
         },
       ],
     })
@@ -186,7 +186,7 @@ Deno.test("Async method from factory", async () => {
       serviceClass: TestClass,
       args: [
         {
-          ref: "factory",
+          id: "factory",
           type: "service",
         },
       ],

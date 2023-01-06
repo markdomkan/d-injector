@@ -44,14 +44,14 @@ The arguments can be services, factories, or values.
 The service argument is used to inject a service into another service. The service argument is an object with the following properties:
 
 - `type`: The type of the argument. In this case, the type is `service`.
-- `ref`: The id of the service that you want to inject.
+- `id`: The id of the service that you want to inject.
 
 #### Factory
 
 The factory argument is used to inject the result of a factory method. The factory argument is an object with the following properties:
 
 - `type`: The type of the argument. In this case, the type is `service`.
-- `ref`: The id of the service that you want to inject.
+- `id`: The id of the service that you want to inject.
 - `method`: The name of the method that you want to call.
 
 #### Value
@@ -105,7 +105,7 @@ injector
     args: [
       {
         type: "service",
-        ref: "service.class",
+        id: "service.class",
       },
     ],
   })
@@ -185,7 +185,7 @@ injector
     args: [
       {
         type: "service",
-        ref: "factory",
+        id: "factory",
       },
     ],
   })
