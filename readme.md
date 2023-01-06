@@ -59,6 +59,10 @@ injector
   .register({
     id: "test.class",
     serviceClass: TestClass,
+    tags: {
+      "tag-category": ["tag1"],
+      TagCategory: ["tag2", "tag3"],
+    },
     args: [
       {
         type: "service",
@@ -69,45 +73,64 @@ injector
   .register({
     id: "service.class",
     serviceClass: ServiceClass,
-    tags: ["test"],
   });
 
 const container = injector.compile();
 const myTestClassInstance = container.get<TestClass>("test.class");
-myTestClassInstance.someAwesomeMethod();
+
+myTestClassInstance.instance.someAwesomeMethod();
+
+// You can also get the tags of the service. Usefull to get some extra information about the service.
+myTestClassInstance.tags.tagCategory; // ["tag1"]
 ```
 
 ### Adding some tags
 
-You can add some tags to your services, and then you can find them by tag.
+You can add some tags to your services, and then you can find them by tag. The tags can be a string array or `Record<string, string[]>`. The "Record" mode is useful if you want to add some categories to your tags.
 
 ```ts
 const injector = new D_Injector();
 injector
   .register({
-    id: "service.class",
+    id: "service.1",
     serviceClass: ServiceClassOne,
     tags: ["super-tag"],
   })
 
   .register({
-    id: "service.class",
+    id: "service.2",
     serviceClass: ServiceClassTwo,
     tags: ["super-tag", "awesome-tag"],
   })
 
   .register({
-    id: "service.class",
+    id: "service.3",
+    serviceClass: ServiceClassTwo,
+    tags: {
+      specialCategoryTags: ["super-tag", "awesome-tag"],
+      otherCategoryTags: ["simply-tag"],
+    },
+  })
+
+  .register({
+    id: "service.4",
     serviceClass: ServiceClassThree,
     tags: ["awesome-tag"],
   });
 
 const container = injector.compile();
+
 const allInjectedServicesWithSuperTagMap =
-  container.findByTag<ServiceClass>("super-tag");
+  container.findByTag<ServiceClass>("super-tag"); // service.1, service.2, service.3
 
 const allInjectedServicesWithAwesomeTagMap =
-  container.findByTag<ServiceClass>("awesome-tag");
+  container.findByTag<ServiceClass>("awesome-tag"); // service.2, service.3, service.4
+
+// If you use the "Record" mode, you can find the services by category and tag.
+const only3InjectedService = container.findByTag<ServiceClass>(
+  "awesome-tag",
+  "specialCategoryTags"
+); // service.3
 ```
 
 ### Factory

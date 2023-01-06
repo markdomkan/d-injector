@@ -2,15 +2,16 @@
 type ServiceClass = new (...args: any[]) => any;
 
 type Arguments = ServiceArg | OtherArg;
+type Tags = Array<string> | Record<string, Array<string>>;
 
 type ServiceArg = {
-  id: string;
   type: "service";
+  ref: string;
 };
 
 type OtherArg = {
-  value: unknown;
   type: "value";
+  value: unknown;
 };
 
 type Service = {
@@ -18,7 +19,7 @@ type Service = {
   serviceClass: ServiceClass;
   method?: string;
   args?: Arguments[];
-  tags?: string[];
+  tags?: Tags;
 };
 
 type RegisteredService = Required<Omit<Service, "id" | "method">> &
@@ -26,23 +27,33 @@ type RegisteredService = Required<Omit<Service, "id" | "method">> &
 
 type RegisteredServiceWithId = RegisteredService & Pick<Service, "id">;
 
-type ServiceInstance = { instance: unknown; tags: string[] };
+type ServiceInstance<T = unknown> = { instance: T; tags: Tags };
 
 export class D_Container {
   constructor(private services: Record<string, ServiceInstance>) {}
 
-  public get<T>(id: string): T {
+  public get<T>(id: string): { instance: T; tags: Tags } {
     const service = this.services[id];
     if (!service) {
       throw new Error(`Service ${id} not registered`);
     }
-    return service.instance as T;
+    return service as ServiceInstance<T>;
   }
 
-  public findByTag(tag: string): Map<string, unknown> {
+  public findByTag(tag: string, tagKey?: string): Map<string, unknown> {
     return new Map(
       Object.entries(this.services)
-        .filter(([_, { tags }]) => tags.includes(tag))
+        .filter(([_, { tags }]) => {
+          if (tags instanceof Array) {
+            return tags.includes(tag);
+          }
+
+          if (tagKey === undefined) {
+            return Object.values(tags).flat().includes(tag);
+          }
+
+          return tags[tagKey]?.includes(tag);
+        })
         .map(([key, { instance }]) => [key, instance])
     );
   }
@@ -83,15 +94,15 @@ export class D_Injector {
 
       for (const arg of service.args) {
         if (arg.type === "service") {
-          if (this.instancedServices[arg.id] === undefined) {
-            this.buildersSubscriber[arg.id] = [
-              ...(this.buildersSubscriber[arg.id] ?? []),
+          if (this.instancedServices[arg.ref] === undefined) {
+            this.buildersSubscriber[arg.ref] = [
+              ...(this.buildersSubscriber[arg.ref] ?? []),
               async () => {
                 if (
                   service.args.find(
                     (arg) =>
                       arg.type === "service" &&
-                      this.instancedServices[arg.id] === undefined
+                      this.instancedServices[arg.ref] === undefined
                   ) === undefined
                 ) {
                   await this.buildService({ id: key, ...service });
@@ -115,7 +126,7 @@ export class D_Injector {
         ...service.args.map((arg) =>
           arg.type === "value"
             ? arg.value
-            : this.instancedServices[arg.id].instance
+            : this.instancedServices[arg.ref].instance
         )
       );
 
@@ -130,7 +141,7 @@ export class D_Injector {
           ...service.args.map((arg) =>
             arg.type === "value"
               ? arg.value
-              : this.instancedServices[arg.id].instance
+              : this.instancedServices[arg.ref].instance
           )
         ),
       };

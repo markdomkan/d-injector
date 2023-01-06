@@ -1,6 +1,13 @@
 // ex. scripts/build_npm.ts
 import { build, emptyDir } from "https://deno.land/x/dnt@0.32.1/mod.ts";
 
+const version = Deno.args[0];
+
+if (!version) {
+  console.error("Please provide a version number");
+  Deno.exit(1);
+}
+
 await emptyDir("./npm");
 
 await build({
@@ -12,7 +19,7 @@ await build({
   },
   package: {
     name: "@markdomkan/d-injector",
-    version: Deno.args[0],
+    version,
     description:
       "D-injector is a really simple and tinny dependency injection library for Deno or Node.js.",
     author: "Mark Domkan",

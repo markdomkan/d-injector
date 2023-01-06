@@ -1,7 +1,7 @@
 import {
   assertEquals,
   assertInstanceOf,
-  assertStrictEquals
+  assertStrictEquals,
 } from "https://deno.land/std@0.170.0/testing/asserts.ts";
 import { faker } from "https://deno.land/x/deno_faker@v1.0.3/mod.ts";
 
@@ -19,7 +19,7 @@ Deno.test("Get by ID", async () => {
   const container = await injector.compile();
   const service = container.get<TestClass>("service.class");
 
-  assertInstanceOf(service, TestClass);
+  assertInstanceOf(service.instance, TestClass);
 });
 
 Deno.test("Find by tag", async () => {
@@ -75,8 +75,8 @@ Deno.test(
     const container = await injector.compile();
     const service = container.get<TestClass>("service.class");
 
-    assertStrictEquals(service.text, randomText);
-    assertStrictEquals(service.number, randomNumber);
+    assertStrictEquals(service.instance.text, randomText);
+    assertStrictEquals(service.instance.number, randomNumber);
   }
 );
 
@@ -104,7 +104,7 @@ Deno.test(
         args: [
           {
             type: "service",
-            id: "service.class",
+            ref: "service.class",
           },
           {
             type: "value",
@@ -119,7 +119,7 @@ Deno.test(
       });
 
     const container = await injector.compile();
-    const value = container.get<TestClass>("test.class").execute();
+    const value = container.get<TestClass>("test.class").instance.execute();
 
     assertStrictEquals(value, "Hello World!");
   }
@@ -148,7 +148,7 @@ Deno.test("Method create from the Factory class should be called", async () => {
       args: [
         {
           type: "service",
-          id: "factory",
+          ref: "factory",
         },
       ],
     })
@@ -159,7 +159,7 @@ Deno.test("Method create from the Factory class should be called", async () => {
     });
 
   const container = await injector.compile();
-  const value = container.get<TestClass>("test.class").execute();
+  const value = container.get<TestClass>("test.class").instance.execute();
 
   assertStrictEquals(value, "Hello World!");
 });
@@ -186,8 +186,8 @@ Deno.test("Async method from factory", async () => {
       serviceClass: TestClass,
       args: [
         {
+          ref: "factory",
           type: "service",
-          id: "factory",
         },
       ],
     })
@@ -198,7 +198,96 @@ Deno.test("Async method from factory", async () => {
     });
 
   const container = await injector.compile();
-  const value = container.get<TestClass>("test.class").execute();
+  const value = container.get<TestClass>("test.class").instance.execute();
 
   assertStrictEquals(value, "Hello World!");
+});
+
+Deno.test("should find the service with entry-style tag", async () => {
+  class TestClass {}
+
+  const injector = new D_Injector();
+  injector.register({
+    id: "service.class",
+    serviceClass: TestClass,
+    tags: {
+      tagCategory: ["tag1", "tag2"],
+    },
+  });
+
+  const container = await injector.compile();
+  const services = container.findByTag("tag1");
+
+  const service = services.values().next().value;
+
+  assertEquals(services.size, 1);
+  assertInstanceOf(service, TestClass);
+});
+
+Deno.test(
+  "should find the service with entry-style tag filtered by tag key",
+  async () => {
+    class TestClass {}
+
+    const injector = new D_Injector();
+    injector.register({
+      id: "service.class",
+      serviceClass: TestClass,
+      tags: {
+        tagCategory: ["tag1", "tag2"],
+      },
+    });
+
+    const container = await injector.compile();
+    const services = container.findByTag("tag1", "tagCategory");
+
+    const service = services.values().next().value;
+
+    assertEquals(services.size, 1);
+    assertInstanceOf(service, TestClass);
+  }
+);
+
+Deno.test(
+  "should return empty array so the tag does not exist inside the tag category",
+  async () => {
+    class TestClass {}
+
+    const injector = new D_Injector();
+    injector.register({
+      id: "service.class",
+      serviceClass: TestClass,
+      tags: {
+        tagCategory: ["tag1", "tag2"],
+        tagCategory2: ["tag3", "tag4"],
+      },
+    });
+
+    const container = await injector.compile();
+    const services = container.findByTag("tag3", "tagCategory");
+
+    assertEquals(services.size, 0);
+  }
+);
+
+Deno.test("Tags should be accessible from the service", async () => {
+  class TestClass {}
+
+  const injector = new D_Injector();
+  injector.register({
+    id: "service.class",
+    serviceClass: TestClass,
+    tags: {
+      tagCategory: ["tag1", "tag2"],
+      tagCategory2: ["tag3", "tag4"],
+    },
+  });
+
+  const container = await injector.compile();
+  const service = container.get<TestClass>("service.class");
+
+  assertEquals(service.tags, {
+    tagCategory: ["tag1", "tag2"],
+    tagCategory2: ["tag3", "tag4"],
+  });
 });
