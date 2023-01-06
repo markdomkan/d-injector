@@ -45,3 +45,4 @@ const publishProcess = Deno.run({
 });
 
 await publishProcess.status();
+await emptyDir("./npm");
