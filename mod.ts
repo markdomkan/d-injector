@@ -2,7 +2,9 @@
 export type ServiceClass = new (...args: any[]) => any;
 
 export type Arguments = ServiceArg | OtherArg;
-export type Tags = Array<string> | Record<string, Array<string>>;
+export type Tags<
+  T extends Record<string, Array<string>> = Record<string, Array<string>>
+> = Array<string> | T;
 
 export type ServiceArg = {
   type: "service";
@@ -40,7 +42,10 @@ export class D_Container {
     return service as InstancedService<T>;
   }
 
-  public findByTag(tag: string, tagKey?: string): Map<string, InstancedService> {
+  public findByTag(
+    tag: string,
+    tagKey?: string
+  ): Map<string, InstancedService> {
     return new Map(
       Object.entries(this.services).filter(([_, { tags }]) => {
         if (tags instanceof Array) {
