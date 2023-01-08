@@ -16,12 +16,12 @@ export type OtherArg = {
   value: unknown;
 };
 
-export type Service = {
+export type Service<T extends Tags = Tags> = {
   id: string;
   serviceClass: ServiceClass;
   method?: string;
   args?: Arguments[];
-  tags?: Tags;
+  tags?: T;
 };
 
 type RegisteredService = Required<Omit<Service, "id" | "method">> &
@@ -70,7 +70,13 @@ export class D_Injector {
     Required<Omit<Service, "id" | "method">> & Pick<Service, "method">
   > = {};
 
-  public register({ id, serviceClass, args, tags, method }: Service): this {
+  public register<T extends Tags = Tags>({
+    id,
+    serviceClass,
+    args,
+    tags,
+    method,
+  }: Service<T>): this {
     if (this.services[id]) {
       throw new Error(`Service ${id} already registered`);
     }

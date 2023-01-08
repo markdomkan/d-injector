@@ -142,7 +142,11 @@ injector
     tags: ["super-tag", "awesome-tag"],
   })
 
-  .register({
+  // You can also use the "Record" mode to add some categories to your tags. In this case you can add custom typing into register method.
+  .register<{
+    specialCategoryTags: string[];
+    otherCategoryTags: string[];
+  }>({
     id: "service.3",
     serviceClass: ServiceClassTwo,
     tags: {

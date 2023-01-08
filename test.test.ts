@@ -275,7 +275,10 @@ Deno.test("Tags should be accessible from the service", async () => {
   class TestClass {}
 
   const injector = new D_Injector();
-  injector.register({
+  injector.register<{
+    tagCategory: string[];
+    tagCategory2: string[];
+  }>({
     id: "service.class",
     serviceClass: TestClass,
     tags: {
