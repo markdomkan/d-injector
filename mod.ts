@@ -125,6 +125,40 @@ export class D_Injector {
 
       await this.buildService({ id: key, ...service });
     }
+    const expectedServices = Object.keys(this.services);
+    const actualServices = Object.keys(this.instancedServices);
+
+    if (expectedServices.length !== actualServices.length) {
+      const missingServices = expectedServices.filter(
+        (service) => !actualServices.includes(service)
+      );
+
+      const noneDepsServices = [];
+
+      for (const missingService of missingServices) {
+        if (this.services[missingService].args === undefined) {
+          noneDepsServices.push(missingService);
+          continue;
+        }
+
+        if (
+          this.services[missingService].args.filter(
+            (arg) =>
+              (arg.type === "service" && !missingService.includes(arg.id)) ||
+              arg.type === "value"
+          ).length === 0
+        ) {
+          noneDepsServices.push(missingService);
+          continue;
+        }
+      }
+
+      throw new Error(
+        `This services can't be instanced: ${missingServices.join(
+          ", "
+        )}. Posible worng services: ${noneDepsServices.join(", ")}`
+      );
+    }
 
     return new D_Container(this.instancedServices);
   }
