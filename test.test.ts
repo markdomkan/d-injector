@@ -2,6 +2,7 @@ import {
   assertEquals,
   assertInstanceOf,
   assertStrictEquals,
+  assertThrows,
 } from "https://deno.land/std@0.170.0/testing/asserts.ts";
 import { faker } from "https://deno.land/x/deno_faker@v1.0.3/mod.ts";
 
@@ -295,3 +296,41 @@ Deno.test("Tags should be accessible from the service", async () => {
     tagCategory2: ["tag3", "tag4"],
   });
 });
+
+Deno.test("Shoud add a new service", async () => {
+  class TestClass {}
+  const injector = new D_Injector();
+  const container = await injector.compile();
+  container.setNewService("service.class", new TestClass());
+
+  const service = container.get<TestClass>("service.class");
+
+  assertInstanceOf(service.instance, TestClass);
+});
+
+Deno.test("Should add a new service with tags", async () => {
+  class TestClass {}
+  const injector = new D_Injector();
+  const container = await injector.compile();
+  container.setNewService("service.class", new TestClass(), {
+    tagCategory: ["tag1", "tag2"],
+  });
+
+  const service = container.findByTag("tag1").values().next().value;
+
+  assertInstanceOf(service.instance, TestClass);
+});
+
+Deno.test(
+  "Should thorw an error if the service is already registered",
+  async () => {
+    class TestClass {}
+    const injector = new D_Injector();
+    const container = await injector.compile();
+    container.setNewService("service.class", new TestClass());
+
+    assertThrows(() => {
+      container.setNewService("service.class", new TestClass());
+    });
+  }
+);

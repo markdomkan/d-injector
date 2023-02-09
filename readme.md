@@ -67,8 +67,9 @@ The container is the object that you will use to get the services from the conta
 
 - `get`: This method receives the id of the service that you want to get.
 - `findByTag`: This method receives the tag that you want to find. The method returns a map with the services that have the tag. The map has the id of the service as key and the service instance as value. if you use the "Record" mode, you can add the category of the tag as second parameter.
+- `setNewService`: This method allows you to set a new register into an already compiled container. Receive by parameter the service id, the instance, and tags object been the last optional.
 
-All methods return the InstancedService Object. This object has the following properties:
+The fisrt two methods return the InstancedService Object. This object has the following properties:
 
 - `instance`: The instance of the service.
 - `tags`: The tags of the service.

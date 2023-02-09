@@ -29,12 +29,20 @@ type RegisteredService = Required<Omit<Service, "id" | "method">> &
 
 type RegisteredServiceWithId = RegisteredService & Pick<Service, "id">;
 
-export type InstancedService<T = unknown> = { instance: T; tags: Tags };
+export type InstancedService<T = unknown> = { instance: T; tags?: Tags };
 
 export class D_Container {
   constructor(private services: Record<string, InstancedService>) {}
 
-  public get<T>(id: string): { instance: T; tags: Tags } {
+  public setNewService<T>(id: string, service: T, tags?: Tags): void {
+    if (this.services[id]) {
+      throw new Error(`Service ${id} already registered`);
+    }
+
+    this.services[id] = { instance: service, tags };
+  }
+
+  public get<T>(id: string): InstancedService<T> {
     const service = this.services[id];
     if (!service) {
       throw new Error(`Service ${id} not registered`);
@@ -48,6 +56,10 @@ export class D_Container {
   ): Map<string, InstancedService> {
     return new Map(
       Object.entries(this.services).filter(([_, { tags }]) => {
+        if (!tags) {
+          return false;
+        }
+
         if (tags instanceof Array) {
           return tags.includes(tag);
         }
