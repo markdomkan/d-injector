@@ -1,0 +1,24 @@
+{
+  "name": "@markdomkan/d-injector",
+  "version": "1.4.6",
+  "module": "index.ts",
+  "type": "module",
+  "description": "D-injector is a really simple and tinny dependency injection library",
+  "author": "Mark Domkan",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/markdomkan/d-injector.git"
+  },
+  "bugs": {
+    "url": "https://github.com/markdomkan/d-injector/issues"
+  },
+  "homepage": "https://github.com/markdomkan/d-injector#readme",
+  "devDependencies": {
+    "@faker-js/faker": "^9.2.0",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

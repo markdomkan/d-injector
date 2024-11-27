@@ -1,15 +1,10 @@
-import {
-  assertEquals,
-  assertInstanceOf,
-  assertStrictEquals,
-  assertThrows,
-} from "https://deno.land/std@0.170.0/testing/asserts.ts";
-import { faker } from "https://deno.land/x/deno_faker@v1.0.3/mod.ts";
 
-import { D_Injector, InstancedService } from "./mod.ts";
+import { faker } from '@faker-js/faker';
+import { expect, test } from "bun:test";
+import { D_Injector, type InstancedService } from "./index.ts";
 
-Deno.test("Get by ID", async () => {
-  class TestClass {}
+test("Get by ID", async () => {
+  class TestClass { }
 
   const injector = new D_Injector();
   injector.register({
@@ -20,10 +15,10 @@ Deno.test("Get by ID", async () => {
   const container = await injector.compile();
   const service = container.get<TestClass>("service.class");
 
-  assertInstanceOf(service.instance, TestClass);
+  expect(service.instance).toBeInstanceOf(TestClass);
 });
 
-Deno.test("Find by tag", async () => {
+test("Find by tag", async () => {
   class TestClass {
     public test(text: string) {
       return text;
@@ -40,22 +35,22 @@ Deno.test("Find by tag", async () => {
   const container = await injector.compile();
   const services = container.findByTag("test");
   const serviceKey = services.keys().next().value;
-  const serviceInstance = services.get(serviceKey);
+  const serviceInstance = services.get(serviceKey as string);
 
-  assertEquals(services.size, 1);
-  assertEquals(serviceKey, "service.class");
-  assertInstanceOf(serviceInstance?.instance, TestClass);
+  expect(services.size).toBe(1);
+  expect(serviceKey).toBe("service.class");
+  expect(serviceInstance?.instance).toBeInstanceOf(TestClass);
 });
 
-Deno.test(
+test(
   "The instance text and number should coincide with injected",
   async () => {
     class TestClass {
-      constructor(public text: string, public number: number) {}
+      constructor(public text: string, public number: number) { }
     }
 
     const randomText = faker.lorem.word();
-    const randomNumber = faker.random.number();
+    const randomNumber = faker.number.int();
 
     const injector = new D_Injector();
     injector.register({
@@ -76,12 +71,12 @@ Deno.test(
     const container = await injector.compile();
     const service = container.get<TestClass>("service.class");
 
-    assertStrictEquals(service.instance.text, randomText);
-    assertStrictEquals(service.instance.number, randomNumber);
+    expect(service.instance.text).toBe(randomText);
+    expect(service.instance.number).toBe(randomNumber);
   }
 );
 
-Deno.test(
+test(
   "The method execute from TestClass should return the injected text manipulated by the injected service",
   async () => {
     class ServiceClass {
@@ -90,7 +85,7 @@ Deno.test(
       }
     }
     class TestClass {
-      constructor(private service: ServiceClass, private text: string) {}
+      constructor(private service: ServiceClass, private text: string) { }
 
       public execute() {
         return this.service.addExclamation(this.text);
@@ -121,12 +116,11 @@ Deno.test(
 
     const container = await injector.compile();
     const value = container.get<TestClass>("test.class").instance.execute();
-
-    assertStrictEquals(value, "Hello World!");
+    expect(value).toBe("Hello World!");
   }
 );
 
-Deno.test("Method create from the Factory class should be called", async () => {
+test("Method create from the Factory class should be called", async () => {
   class StringFactory {
     public create() {
       return "Hello World!";
@@ -134,7 +128,7 @@ Deno.test("Method create from the Factory class should be called", async () => {
   }
 
   class TestClass {
-    constructor(private text: string) {}
+    constructor(private text: string) { }
 
     public execute() {
       return this.text;
@@ -162,10 +156,10 @@ Deno.test("Method create from the Factory class should be called", async () => {
   const container = await injector.compile();
   const value = container.get<TestClass>("test.class").instance.execute();
 
-  assertStrictEquals(value, "Hello World!");
+  expect(value).toBe("Hello World!");
 });
 
-Deno.test("Async method from factory", async () => {
+test("Async method from factory", async () => {
   class StringFactory {
     public create(): Promise<string> {
       return Promise.resolve("Hello World!");
@@ -173,7 +167,7 @@ Deno.test("Async method from factory", async () => {
   }
 
   class TestClass {
-    constructor(private text: string) {}
+    constructor(private text: string) { }
 
     public execute() {
       return this.text;
@@ -201,11 +195,11 @@ Deno.test("Async method from factory", async () => {
   const container = await injector.compile();
   const value = container.get<TestClass>("test.class").instance.execute();
 
-  assertStrictEquals(value, "Hello World!");
+  expect(value).toBe("Hello World!");
 });
 
-Deno.test("should find the service with entry-style tag", async () => {
-  class TestClass {}
+test("should find the service with entry-style tag", async () => {
+  class TestClass { }
 
   const injector = new D_Injector();
   injector.register({
@@ -221,14 +215,14 @@ Deno.test("should find the service with entry-style tag", async () => {
 
   const service = services.values().next().value as InstancedService<TestClass>;
 
-  assertEquals(services.size, 1);
-  assertInstanceOf(service.instance, TestClass);
+  expect(services.size).toBe(1);
+  expect(service.instance).toBeInstanceOf(TestClass);
 });
 
-Deno.test(
+test(
   "should find the service with entry-style tag filtered by tag key",
   async () => {
-    class TestClass {}
+    class TestClass { }
 
     const injector = new D_Injector();
     injector.register({
@@ -245,15 +239,15 @@ Deno.test(
     const service = services.values().next()
       .value as InstancedService<TestClass>;
 
-    assertEquals(services.size, 1);
-    assertInstanceOf(service.instance, TestClass);
+    expect(services.size).toBe(1);
+    expect(service.instance).toBeInstanceOf(TestClass);
   }
 );
 
-Deno.test(
+test(
   "should return empty array so the tag does not exist inside the tag category",
   async () => {
-    class TestClass {}
+    class TestClass { }
 
     const injector = new D_Injector();
     injector.register({
@@ -268,12 +262,12 @@ Deno.test(
     const container = await injector.compile();
     const services = container.findByTag("tag3", "tagCategory");
 
-    assertEquals(services.size, 0);
+    expect(services.size).toBe(0);
   }
 );
 
-Deno.test("Tags should be accessible from the service", async () => {
-  class TestClass {}
+test("Tags should be accessible from the service", async () => {
+  class TestClass { }
 
   const injector = new D_Injector();
   injector.register<{
@@ -291,25 +285,27 @@ Deno.test("Tags should be accessible from the service", async () => {
   const container = await injector.compile();
   const service = container.get<TestClass>("service.class");
 
-  assertEquals(service.tags, {
-    tagCategory: ["tag1", "tag2"],
-    tagCategory2: ["tag3", "tag4"],
-  });
+  expect(service.tags).toStrictEqual(
+    {
+      tagCategory: ["tag1", "tag2"],
+      tagCategory2: ["tag3", "tag4"],
+    }
+  );
 });
 
-Deno.test("Shoud add a new service", async () => {
-  class TestClass {}
+test("Shoud add a new service", async () => {
+  class TestClass { }
   const injector = new D_Injector();
   const container = await injector.compile();
   container.setNewService("service.class", new TestClass());
 
   const service = container.get<TestClass>("service.class");
 
-  assertInstanceOf(service.instance, TestClass);
+  expect(service.instance).toBeInstanceOf(TestClass);
 });
 
-Deno.test("Should add a new service with tags", async () => {
-  class TestClass {}
+test("Should add a new service with tags", async () => {
+  class TestClass { }
   const injector = new D_Injector();
   const container = await injector.compile();
   container.setNewService("service.class", new TestClass(), {
@@ -318,19 +314,19 @@ Deno.test("Should add a new service with tags", async () => {
 
   const service = container.findByTag("tag1").values().next().value;
 
-  assertInstanceOf(service.instance, TestClass);
+  expect(service?.instance).toBeInstanceOf(TestClass);
 });
 
-Deno.test(
+test(
   "Should thorw an error if the service is already registered",
   async () => {
-    class TestClass {}
+    class TestClass { }
     const injector = new D_Injector();
     const container = await injector.compile();
     container.setNewService("service.class", new TestClass());
 
-    assertThrows(() => {
+    expect(() => {
       container.setNewService("service.class", new TestClass());
-    });
+    }).toThrow();
   }
 );
