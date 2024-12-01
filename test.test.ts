@@ -330,3 +330,33 @@ test(
     }).toThrow();
   }
 );
+
+
+test("Should override the service", async () => {
+  class TestClass { }
+  class TestClass2 { }
+  const injector = new D_Injector();
+  injector.register({
+    id: "service.class",
+    serviceClass: TestClass,
+  });
+  injector.override({
+    id: "service.class",
+    serviceClass: TestClass2,
+  });
+  const container = await injector.compile();
+  const service = container.get<TestClass2>("service.class");
+
+  expect(service.instance).toBeInstanceOf(TestClass2);
+})
+
+test("Should thorw error if service is not registered when trying to override", async () => {
+  class TestClass { }
+  const injector = new D_Injector();
+  expect(() => {
+    injector.override({
+      id: "service.class",
+      serviceClass: TestClass,
+    });
+  }).toThrow("Service service.class is not registered");
+})

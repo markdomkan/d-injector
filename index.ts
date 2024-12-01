@@ -1,39 +1,38 @@
-// deno-lint-ignore no-explicit-any
-export type ServiceClass = new (...args: any[]) => any;
-
-export type Arguments = ServiceArg | OtherArg;
-export type Tags<
+type ServiceClass = new (...args: any[]) => any;
+type Arguments = ServiceArg | OtherArg;
+type Tags<
   T extends Record<string, Array<string>> = Record<string, Array<string>>
 > = Array<string> | T;
-
-export type ServiceArg = {
+type ServiceArg = {
   type: "service";
   id: string;
 };
-
-export type OtherArg = {
+type OtherArg = {
   type: "value";
   value: unknown;
 };
-
-export type Service<T extends Tags = Tags> = {
+type Service<T extends Tags = Tags> = {
   id: string;
   serviceClass: ServiceClass;
   method?: string;
   args?: Arguments[];
   tags?: T;
 };
-
 type RegisteredService = Required<Omit<Service, "id" | "method">> &
   Pick<Service, "method">;
-
 type RegisteredServiceWithId = RegisteredService & Pick<Service, "id">;
-
 export type InstancedService<T = unknown> = { instance: T; tags?: Tags };
 
 export class D_Container {
-  constructor(private services: Record<string, InstancedService>) {}
+  constructor(private services: Record<string, InstancedService>) { }
 
+  /**
+   * Registers a new service in the container.
+   * @param id - The unique identifier for the service.
+   * @param service - The service instance to register.
+   * @param tags - Optional tags for categorizing the service.
+   * @throws Error if the service with the given id is already registered.
+   */
   public setNewService<T>(id: string, service: T, tags?: Tags): void {
     if (this.services[id]) {
       throw new Error(`Service ${id} already registered`);
@@ -42,6 +41,12 @@ export class D_Container {
     this.services[id] = { instance: service, tags };
   }
 
+  /**
+   * Retrieves a service by its identifier.
+   * @param id - The unique identifier of the service.
+   * @returns The instanced service associated with the id.
+   * @throws Error if the service is not registered.
+   */
   public get<T>(id: string): InstancedService<T> {
     const service = this.services[id];
     if (!service) {
@@ -50,6 +55,12 @@ export class D_Container {
     return service as InstancedService<T>;
   }
 
+  /**
+   * Finds all services that match a specific tag.
+   * @param tag - The tag to search for.
+   * @param tagKey - Optional key if tags are organized under specific keys.
+   * @returns A map of service IDs to their corresponding instanced services that match the tag.
+   */
   public findByTag(
     tag: string,
     tagKey?: string
@@ -82,6 +93,12 @@ export class D_Injector {
     Required<Omit<Service, "id" | "method">> & Pick<Service, "method">
   > = {};
 
+  /**
+   * Registers a service with the injector.
+   * @param service - The service configuration to register.
+   * @returns The injector instance for chaining.
+   * @throws Error if a service with the given id is already registered.
+   */
   public register<T extends Tags = Tags>({
     id,
     serviceClass,
@@ -103,6 +120,33 @@ export class D_Injector {
     return this;
   }
 
+
+  public override<T extends Tags = Tags>({ id,
+    serviceClass,
+    args,
+    tags,
+    method,
+  }: Service<T>): this {
+    if (!this.services[id]) {
+      throw new Error(`Service ${id} is not registered`);
+    }
+
+    this.services[id] = {
+      serviceClass,
+      args: args ?? [],
+      tags: tags ?? [],
+      method,
+    };
+
+    return this;
+  }
+
+
+  /**
+   * Compiles and initializes all registered services.
+   * @returns A promise that resolves to a container containing all instanced services.
+   * @throws Error if some services cannot be instantiated due to missing dependencies.
+   */
   public async compile(): Promise<D_Container> {
     servicesFor: for (const [key, service] of Object.entries(this.services)) {
       if (
@@ -175,6 +219,11 @@ export class D_Injector {
     return new D_Container(this.instancedServices);
   }
 
+  /**
+   * Builds and instantiates a registered service.
+   * @param service - The registered service with its identifier.
+   * @returns A promise that resolves when the service is successfully built.
+   */
   private async buildService(service: RegisteredServiceWithId): Promise<void> {
     if (service.method) {
       const instance = new service.serviceClass(
